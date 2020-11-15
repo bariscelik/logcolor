@@ -1,0 +1,4 @@
+[2020-11-12 16:06:26.350] [logcolor] [debug] [main.cpp:16] Program has reached the first breakpoint
+[2020-11-12 16:17:12.397] [logcolor] [info] [thread.cpp:516] Thread count: 4
+[2020-11-12 16:20:31.565] [logcolor] [error] [regex.cpp:12] Undefined country code 'SJ'
+[2020-11-12 16:38:36.123] [logcolor] [warning] [main.cpp:20] There is a warning. The device may not work properly
