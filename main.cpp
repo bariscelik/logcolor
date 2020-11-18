@@ -26,9 +26,12 @@
 
 #include "logcolor.h"
 #include <bits/stdc++.h>
+#include <fstream>
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
+
+#define CHAR_SPACE ' '
 
 using namespace lc;
 
@@ -54,7 +57,11 @@ std::vector<MATCH> defaultColorScheme;
 /**
 * @todo number of rows to display (last 300 lines: <lc -n 300>)
 * @todo define color template files (lc.ini)
-* @todo make cross platform
+* @todo store data incoming from std::cin in cache buffer on RAM, catch throw if occures an allocation error (std::string exception)
+* @test pipe a 0.5M size of file with below commands (to test memory allocation is ok):
+*       systemd-run --scope -p MemoryLimit=100K cat /var/log/syslog | lc -n
+*       or ulimit
+*       create .sh file for tests
 */
 int main(int argc, char* argv[])
 {
@@ -101,6 +108,64 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+/*constexpr {
+    return totalDigit - numDigit
+}*/
+
+inline std::size_t lineCount(std::ifstream* file = nullptr)
+{
+    std::size_t count = 0;
+
+    assert(file != nullptr && "File stream is null.");
+
+    count = std::count_if(std::istreambuf_iterator<char>(*file),
+        std::istreambuf_iterator<char>(),
+        [](char c) {
+            return c == '\n';
+        });
+
+    file->seekg(0);
+
+    return count;
+}
+
+/**
+ * @brief calculate line count for pipe
+ * @param os
+ * @return line count in string
+ */
+inline uint64_t lineCount(std::string* os = nullptr)
+{
+    uint64_t count = 0;
+
+    assert(os != nullptr && "Stringstream is null");
+
+    // pipe
+    count = std::count_if(std::istreambuf_iterator<char>(std::cin),
+        std::istreambuf_iterator<char>(),
+        [&os](char c) {
+            os->push_back(c);
+            return c == '\n';
+        });
+
+    return count;
+}
+
+inline std::string appendAlignDigits(uint64_t& lineNumber, uint8_t maxDigit)
+{
+    std::string lineNumberStr = std::to_string(lineNumber);
+
+    const size_t spaceCount = maxDigit - lineNumberStr.size();
+
+    lineNumberStr.push_back('.');
+    if (spaceCount > 0)
+        lineNumberStr.append(spaceCount, CHAR_SPACE);
+
+    lineNumberStr = lc::string(lineNumberStr, fg::BLACK, bg::WHITE, fx::BOLD);
+
+    return lineNumberStr;
+}
+
 void initColorScheme()
 {
     defaultColorScheme = {
@@ -118,17 +183,40 @@ void readPipe()
 {
     std::string input;
 
+    // 1000 char cache buffer, preallocation for performance
+    input.reserve(1000);
+
     uint64_t lineNumber = 1;
 
-    while (getline(std::cin, input)) {
-        parseLine(input);
+    if (!displayLineNumber) {
+        while (getline(std::cin, input)) {
+            parseLine(input);
+            std::cout << input << std::endl;
+        }
+    } else {
+        size_t lCount = 0;
+        size_t maxDigit = 0;
+        std::string s;
 
-        // @todo calculate spaces to align left
-        if (displayLineNumber)
-            std::cout << lc::string(std::to_string(lineNumber) + ".", fg::BLACK, bg::WHITE, fx::BOLD);
+        try {
 
-        std::cout << input << std::endl;
-        lineNumber++;
+            // calculate line count
+            lCount = lineCount(&s);
+            maxDigit = std::to_string(lCount).size();
+
+            std::istringstream str(s);
+
+            while (getline(str, input)) {
+                parseLine(input);
+                std::cout << appendAlignDigits(lineNumber, maxDigit) << input << std::endl;
+                lineNumber++;
+            }
+
+        } catch (const std::bad_alloc& ex) {
+
+            std::cout << ex.what() << std::endl;
+            std::cerr << "There is no enough memory!" << std::endl;
+        }
     }
 
     exit(EXIT_SUCCESS);
@@ -139,9 +227,6 @@ inline void parseLine(std::string& line) noexcept
     std::string str;
     size_t pos = 0;
 
-    /**
-     * @todo make array stack-needle
-    */
     for (auto it = defaultColorScheme.begin(); it < defaultColorScheme.end(); it++) {
         pos = line.find(it->find);
 
@@ -152,7 +237,9 @@ inline void parseLine(std::string& line) noexcept
 
 void parse(char* filename)
 {
-    std::ifstream file(filename);
+    std::ifstream file(filename, std::ios::binary);
+
+    lineCount(&file);
 
     uint64_t lineNumber = 1;
 
