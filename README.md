@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/bariscelik/logcolor.svg?branch=master)](https://travis-ci.org/bariscelik/logcolor)
+[![Build Status](https://travis-ci.org/bariscelik/logcolor.svg?branch=main)](https://travis-ci.org/bariscelik/logcolor)
 
 # logcolor
 logcolor, or lc in short, is a very basic log viewer with colors. It works in command line and supplies elementary features to view log files. It is easy to setup and customize.
