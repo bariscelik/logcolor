@@ -25,17 +25,19 @@ make # or make install to system-wide using
 ```console
 foo@bar:~$ lc -f file.log
 ```
+![Log file with default colors](https://bariscelik.github.io/logcolor/screenshot_file_log.png)
 
 ### Pipe operator as input
 ```console
 foo@bar:~$ cat /var/log/syslog | lc
 ```
+![Pipe operator as input](https://bariscelik.github.io/logcolor/screenshot_cat_pipe.png)
 
 ### Adding line number
 ```console
 foo@bar:~$ lc -l -f file.log
 ```
-
+![Adding line number](https://bariscelik.github.io/logcolor/screenshot_cat_pipe_line_number.png)
 ### Filter results into last ``n`` lines
 ```console
 foo@bar:~$ lc -n 300 -f file.log # last 300 lines
